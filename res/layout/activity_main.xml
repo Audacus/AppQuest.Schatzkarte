@@ -1,0 +1,83 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/relativeLayoutMain"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="ch.fenceposts.appquest.schatzkarte.MainActivity" >
+
+    <org.osmdroid.views.MapView
+        android:id="@+id/mapViewMap"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true" >
+    </org.osmdroid.views.MapView>
+
+    <TextView
+        android:id="@+id/textViewLongitude"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="18dp"
+        android:layout_marginTop="14dp"
+        android:text="@string/longitude" />
+
+    <TextView
+        android:id="@+id/textViewLatitude"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/textViewLongitude"
+        android:layout_below="@+id/textViewLongitude"
+        android:layout_marginTop="15dp"
+        android:text="@string/latitude" />
+
+   ch.fenceposts.appquest.schatzkarte.view.CanvasCrosshairViewew
+        android:id="@+id/viewCustomView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true" />
+
+    <TextView
+        android:id="@+id/textViewLongitudeValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/textViewLongitude"
+        android:layout_alignBottom="@+id/textViewLongitude"
+        android:layout_marginLeft="20dp"
+        android:layout_toRightOf="@+id/textViewLongitude"
+        android:text="@string/no_value" />
+
+    <TextView
+        android:id="@+id/textViewLatitudeValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/textViewLatitude"
+        android:layout_alignBottom="@+id/textViewLatitude"
+        android:layout_alignLeft="@+id/textViewLongitudeValue"
+        android:text="@string/no_value" />
+
+    <Button
+        android:id="@+id/buttonCenterCurrentPosition"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:onClick="centerCurrentPosition"
+        android:text="@string/center_current_position" />
+
+    <Button
+        android:id="@+id/buttonSetMarkerCenter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/buttonCenterCurrentPosition"
+        android:onClick="setMarkerCenter"
+        android:text="@string/set_marker_center" />
+
+</RelativeLayout>
