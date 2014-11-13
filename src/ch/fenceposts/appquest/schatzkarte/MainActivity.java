@@ -1,4 +1,5 @@
 // http://madushankaperera.wordpress.com/2014/03/20/google-maps-android-api-v2-current-location-example-with-gps/
+// https://developers.google.com/maps/documentation/android/v1/hello-mapview !!!!!!
 // http://stackoverflow.com/questions/9417378/osmdroid-overlays-multiple-static-and-one-dynamic
 // http://stackoverflow.com/questions/10879447/android-itemizedoverlay-place-and-remove-markers-on-map
 package ch.fenceposts.appquest.schatzkarte;
@@ -22,11 +23,12 @@ import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.ItemizedIconOverlay;
 import org.osmdroid.views.overlay.ItemizedOverlay;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.TilesOverlay;
+
+import ch.fenceposts.appquest.schatzkarte.overlay.MyItemizedOverlay;
 
 import android.app.Activity;
 import android.content.Context;
@@ -45,8 +47,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
-//import org.osmdroid.views.overlay.OverlayItem;
 
 public class MainActivity extends Activity implements LocationListener, OnClickListener {
 
@@ -59,7 +59,6 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 	private LocationManager locationManager;
 	private IMapController controllerMapView;
 	private ArrayList<OverlayItem> overlayItems;
-	private ItemizedOverlay<OverlayItem> locationOverlay;
 	private MapView mapViewMap;
 	private TextView textViewLatitudeValue;
 	private TextView textViewLongitudeValue;
@@ -113,22 +112,36 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 
 		overlayItems = new ArrayList<OverlayItem>();
 		overlayItems.add(new OverlayItem("HSR", "Hochschule für Technik Rapperswil", positionHsr));
-
-		locationOverlay = new ItemizedIconOverlay<OverlayItem>(overlayItems, new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
+		
+		List<Overlay> mapOverlays = mapViewMap.getOverlays();
+		Drawable drawableMarkerDefault = this.getResources().getDrawable(R.drawable.marker_default);
+		MyItemizedOverlay itemizedOverlay = new MyItemizedOverlay(drawableMarkerDefault, resourceProxy, this) {
+			
 			@Override
-			public boolean onItemSingleTapUp(final int index, final OverlayItem item) {
-				Toast.makeText(MainActivity.this, item.getTitle(), Toast.LENGTH_SHORT).show();				
-				return true;
-			}
-
-			@Override
-			public boolean onItemLongPress(final int index, final OverlayItem item) {
-//				Toast.makeText(MainActivity.this, item.getTitle(), Toast.LENGTH_SHORT).show();
-				mapViewMap.getOverlays().clear();
+			public boolean onSnapToItem(int x, int y, Point snapPoint, IMapView mapView) {
+				// TODO Auto-generated method stub
 				return false;
 			}
-		}, resourceProxy);
-		mapViewMap.getOverlays().add(locationOverlay);
+		};
+
+//		locationOverlay = new ItemizedIconOverlay<OverlayItem>(overlayItems, new OnItemGestureListener<OverlayItem>() {
+//			@Override
+//			public boolean onItemSingleTapUp(final int index, final OverlayItem item) {
+//				Toast.makeText(MainActivity.this, item.getTitle(), Toast.LENGTH_SHORT).show();
+//				overlayItems.add(item);
+//				mapViewMap.invalidate();
+//				return true;
+//			}
+//
+//			@Override
+//			public boolean onItemLongPress(final int index, final OverlayItem item) {
+////				Toast.makeText(MainActivity.this, item.getTitle(), Toast.LENGTH_SHORT).show();
+//				mapViewMap.getOverlays().remove(locationOverlay);
+//				mapViewMap.invalidate();
+//				return false;
+//			}
+//		}, resourceProxy);
+		mapViewMap.getOverlays().add(itemizedOverlay);
 
 		centerPositionHsr(null);
 		mapViewMap.invalidate();
@@ -138,8 +151,8 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 	protected void onResume() {
 		super.onResume();
 
-		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 13337, 1, this);
-		locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 13337, 1, this);
+		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 1, this);
+		locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000, 1, this);
 
 		// TODO: check getting location ---------------------------------------
 		// Location lastLocation =
