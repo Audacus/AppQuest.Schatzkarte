@@ -9,5 +9,7 @@
     <string name="no_value">no_value</string>
     <string name="center_current_position">current position</string>
     <string name="set_marker_center">set marker</string>
+    <string name="trace">trace</string>
+    <string name="hsr">hsr</string>
 
 </resources>

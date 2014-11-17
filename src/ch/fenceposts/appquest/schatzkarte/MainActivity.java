@@ -10,8 +10,8 @@ import java.util.List;
 
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.ResourceProxy;
+import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.api.IMapController;
-import org.osmdroid.api.IMapView;
 import org.osmdroid.tileprovider.MapTileProviderArray;
 import org.osmdroid.tileprovider.MapTileProviderBase;
 import org.osmdroid.tileprovider.modules.IArchiveFile;
@@ -23,12 +23,10 @@ import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.ItemizedOverlay;
+import org.osmdroid.views.Projection;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.TilesOverlay;
-
-import ch.fenceposts.appquest.schatzkarte.overlay.MyItemizedOverlay;
 
 import android.app.Activity;
 import android.content.Context;
@@ -36,30 +34,39 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.TextView;
+import ch.fenceposts.appquest.schatzkarte.overlay.MyItemizedOverlay;
 
 public class MainActivity extends Activity implements LocationListener, OnClickListener {
 
 	private static final double LATITUDE_HSR = 47.223319;
 	private static final double LONGITUDE_HSR = 8.817275;
 	private static final String DEBUG_TAG = "mydebug";
+	private CheckBox checkBoxTrace;
 	private DefaultResourceProxyImpl resourceProxy;
+	private DisplayMetrics displayMetrics;
 	private GeoPoint positionHsr = new GeoPoint(LATITUDE_HSR, LONGITUDE_HSR);
-	private GeoPoint positionCurrent;
-	private LocationManager locationManager;
+	private GeoPoint positionCurrent = positionHsr;
 	private IMapController controllerMapView;
-	private ArrayList<OverlayItem> overlayItems;
+	private LocationManager locationManager;
+	private List<Overlay> mapOverlays;
 	private MapView mapViewMap;
+	private MyItemizedOverlay itemizedOverlay;
+	private OverlayItem overlayItemHsr;
 	private TextView textViewLatitudeValue;
 	private TextView textViewLongitudeValue;
 
@@ -68,8 +75,10 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		resourceProxy = new DefaultResourceProxyImpl(getApplicationContext());
+		displayMetrics = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
 
+		resourceProxy = new DefaultResourceProxyImpl(getApplicationContext());
 		locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
 		if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -80,8 +89,12 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 
 		textViewLatitudeValue = (TextView) findViewById(R.id.textViewLatitudeValue);
 		textViewLongitudeValue = (TextView) findViewById(R.id.textViewLongitudeValue);
+		checkBoxTrace = (CheckBox) findViewById(R.id.checkBoxTrace);
 
-		mapViewMap = (MapView) findViewById(R.id.mapViewMap /* eure ID der Map View */);
+		mapViewMap = (MapView) findViewById(R.id.mapViewMap /*
+															 * eure ID der Map
+															 * View
+															 */);
 		mapViewMap.setTileSource(TileSourceFactory.MAPQUESTOSM);
 
 		mapViewMap.setMultiTouchControls(true);
@@ -90,18 +103,22 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 		controllerMapView = mapViewMap.getController();
 		controllerMapView.setZoom(18);
 
-		// Die TileSource beschreibt die Eigenschaften der Kacheln die wir anzeigen
-		
-		XYTileSource  treasureMapTileSource = new XYTileSource("mbtiles", ResourceProxy.string.offline_mode, 1, 20, 256, ".png", new String[]{"http://example.org/"});
+		// Die TileSource beschreibt die Eigenschaften der Kacheln die wir
+		// anzeigen
+		XYTileSource treasureMapTileSource = new XYTileSource("mbtiles", ResourceProxy.string.offline_mode, 1, 20, 256, ".png", new String[] { "http://example.org/" });
 
-		File file = new File(Environment.getExternalStorageDirectory() /* entspricht sdcard */, "hsr.mbtiles");
+		File file = new File(Environment.getExternalStorageDirectory() /*
+																		 * entspricht
+																		 * sdcard
+																		 */, "hsr.mbtiles");
 
 		/*
 		 * Das verwenden von mbtiles ist leider ein wenig aufwändig, wir müssen
 		 * unsere XYTileSource in verschiedene Klassen 'verpacken' um sie dann
 		 * als TilesOverlay über der Grundkarte anzuzeigen.
 		 */
-		MapTileModuleProviderBase treasureMapModuleProvider = new MapTileFileArchiveProvider(new SimpleRegisterReceiver(this), treasureMapTileSource, new IArchiveFile[] { MBTilesFileArchive.getDatabaseFileArchive(file) });
+		MapTileModuleProviderBase treasureMapModuleProvider = new MapTileFileArchiveProvider(new SimpleRegisterReceiver(this), treasureMapTileSource,
+				new IArchiveFile[] { MBTilesFileArchive.getDatabaseFileArchive(file) });
 
 		MapTileProviderBase treasureMapProvider = new MapTileProviderArray(treasureMapTileSource, null, new MapTileModuleProviderBase[] { treasureMapModuleProvider });
 		TilesOverlay treasureMapTilesOverlay = new TilesOverlay(treasureMapProvider, getBaseContext());
@@ -110,63 +127,70 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 		// Jetzt können wir den Overlay zu unserer Karte hinzufügen:
 		mapViewMap.getOverlays().add(treasureMapTilesOverlay);
 
-		overlayItems = new ArrayList<OverlayItem>();
-		overlayItems.add(new OverlayItem("HSR", "Hochschule für Technik Rapperswil", positionHsr));
-		
-		List<Overlay> mapOverlays = mapViewMap.getOverlays();
-		Drawable drawableMarkerDefault = this.getResources().getDrawable(R.drawable.marker_default);
-		MyItemizedOverlay itemizedOverlay = new MyItemizedOverlay(drawableMarkerDefault, resourceProxy, this) {
-			
+		mapOverlays = mapViewMap.getOverlays();
+		overlayItemHsr = new OverlayItem("HSR", "Hochschule für Technik Rapperswil", positionHsr);
+		Drawable drawableMarkerDefault = this.getResources().getDrawable(R.drawable.androidmarker);
+
+		itemizedOverlay = new MyItemizedOverlay(drawableMarkerDefault, resourceProxy, this) {
+
 			@Override
-			public boolean onSnapToItem(int x, int y, Point snapPoint, IMapView mapView) {
-				// TODO Auto-generated method stub
-				return false;
+			public boolean onLongPress(MotionEvent e, MapView mapView) {
+				IGeoPoint iGeoPoint = mapViewMap.getProjection().fromPixels((int) e.getX(), (int) e.getY());
+				addItem((GeoPoint) iGeoPoint);
+				mapOverlays.add(this);
+				populate();
+				mapViewMap.invalidate();
+
+				return super.onLongPress(e, mapView);
+			}
+
+			@Override
+			public boolean onDoubleTap(MotionEvent e, MapView mapView) {
+
+				List<OverlayItem> tempMOverlays = new ArrayList<OverlayItem>(this.mOverlays);
+
+				for (OverlayItem overlayItem : tempMOverlays) {
+
+					Projection projection = mapViewMap.getProjection();
+					GeoPoint geoPointItem = overlayItem.getPoint();
+
+					Rect screenRect = mapView.getScreenRect(new Rect());
+					Point pointItem = projection.toPixels(geoPointItem, null);
+
+					float pixelDistanceX = pointItem.x - screenRect.left;
+					float pixelDistanceY = pointItem.y - screenRect.top;
+
+					double distance = Math.sqrt((e.getX() - pixelDistanceX) * (e.getX() - pixelDistanceX) + (e.getY() - pixelDistanceY) * (e.getY() - pixelDistanceY));
+
+					if (distance < (Math.min(displayMetrics.widthPixels, displayMetrics.heightPixels) / 9)) {
+						this.mOverlays.remove(overlayItem);
+						populate();
+						mapViewMap.invalidate();
+					}
+				}
+
+				return super.onLongPress(e, mapView);
 			}
 		};
 
-//		locationOverlay = new ItemizedIconOverlay<OverlayItem>(overlayItems, new OnItemGestureListener<OverlayItem>() {
-//			@Override
-//			public boolean onItemSingleTapUp(final int index, final OverlayItem item) {
-//				Toast.makeText(MainActivity.this, item.getTitle(), Toast.LENGTH_SHORT).show();
-//				overlayItems.add(item);
-//				mapViewMap.invalidate();
-//				return true;
-//			}
-//
-//			@Override
-//			public boolean onItemLongPress(final int index, final OverlayItem item) {
-////				Toast.makeText(MainActivity.this, item.getTitle(), Toast.LENGTH_SHORT).show();
-//				mapViewMap.getOverlays().remove(locationOverlay);
-//				mapViewMap.invalidate();
-//				return false;
-//			}
-//		}, resourceProxy);
-		mapViewMap.getOverlays().add(itemizedOverlay);
-
-		centerPositionHsr(null);
+		itemizedOverlay.addOverlay(overlayItemHsr);
+		mapOverlays.add(itemizedOverlay);
 		mapViewMap.invalidate();
+		writePosition(positionCurrent);
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
 
-		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 1, this);
-		locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000, 1, this);
+		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 8484, 1, this);
+		locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 8484, 1, this);
 
-		// TODO: check getting location ---------------------------------------
-		// Location lastLocation =
-		// locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-		// if (lastLocation != null) {
-		// position = new GeoPoint(lastLocation.getLatitude(),
-		// lastLocation.getLongitude());
-		// controllerMapView.setCenter(position);
-		// }
-		// ---------------------------------------------------------------------
-
-
-		// set position to hsr geo point
-		centerPositionHsr(null);
+		if (checkBoxTrace.isChecked()) {
+			controllerMapView.animateTo(positionCurrent);
+		} else {
+			controllerMapView.animateTo(positionHsr);
+		}
 	}
 
 	@Override
@@ -203,7 +227,10 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 		Log.d(DEBUG_TAG, "Longitude: " + Double.toString(positionCurrent.getLongitude()) + " / Latitude: " + Double.toString(positionCurrent.getLatitude()));
 
 		writePosition(positionCurrent);
-//		 controllerMapView.setCenter(currentPosition);
+
+		if (checkBoxTrace.isChecked()) {
+			controllerMapView.animateTo(positionCurrent);
+		}
 	}
 
 	@Override
@@ -235,58 +262,20 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 		textViewLongitudeValue.setText(Double.toString(positionCurrent2.getLongitude()));
 	}
 
-	// aktuelle Position zentrieren
-	public void centerPositionCurrent(View view) {
-		controllerMapView.setCenter(positionCurrent);
+	public void centerCurrentPosition(View view) {
+		controllerMapView.animateTo(positionCurrent);
 	}
-	
-	// HSR zentrieren
-	public void centerPositionHsr(View view) {
-		controllerMapView.setCenter(positionHsr);
+
+	public void centerHsr(View view) {
+		controllerMapView.animateTo(positionHsr);
 	}
 
 	// ein Marker in der aktuellen Mitte setzen (Fadenkreuz)
 	public void setMarkerCenter(View view) {
 		// Put overlay icon a little way from map centre
-		overlayItems.add(new OverlayItem("Here", "current position", positionCurrent));
-	}
-	
-	public class MarkerItemizedOverlay extends ItemizedOverlay<OverlayItem> {
+		itemizedOverlay.addItem((GeoPoint) mapViewMap.getMapCenter());
 
-	    public MarkerItemizedOverlay(Drawable pDefaultMarker,
-				ResourceProxy pResourceProxy) {
-			super(pDefaultMarker, pResourceProxy);
-			// TODO Auto-generated constructor stub
-		}
-
-		private ArrayList<OverlayItem> mOverlays = new ArrayList<OverlayItem>();
-	    MapView mView;
-
-	    // Rest of the code ...
-
-	    @Override
-	    protected boolean onTap(int index) {
-	        List<Overlay> mOverlays = mView.getOverlays();
-	        return mOverlays.remove(this); 
-	    }
-
-		@Override
-		public boolean onSnapToItem(int x, int y, Point snapPoint,
-				IMapView mapView) {
-			// TODO Auto-generated method stub
-			return false;
-		}
-
-		@Override
-		protected OverlayItem createItem(int i) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public int size() {
-			// TODO Auto-generated method stub
-			return 0;
-		}
+//		mapOverlays.add(itemizedOverlay);
+		mapViewMap.invalidate();
 	}
 }

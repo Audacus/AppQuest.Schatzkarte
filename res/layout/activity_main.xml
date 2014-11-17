@@ -12,10 +12,15 @@
     <org.osmdroid.views.MapView
         android:id="@+id/mapViewMap"
         android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+    </org.osmdroid.views.MapView>
+
+    <ch.fenceposts.appquest.schatzkarte.view.CanvasCrosshairView
+        android:id="@+id/viewCustomView"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true" >
-    </org.osmdroid.views.MapView>
+        android:layout_alignParentTop="true" />
 
     <TextView
         android:id="@+id/textViewLongitude"
@@ -35,13 +40,6 @@
         android:layout_below="@+id/textViewLongitude"
         android:layout_marginTop="15dp"
         android:text="@string/latitude" />
-
-   ch.fenceposts.appquest.schatzkarte.view.CanvasCrosshairViewew
-        android:id="@+id/viewCustomView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true" />
 
     <TextView
         android:id="@+id/textViewLongitudeValue"
@@ -71,12 +69,30 @@
         android:onClick="centerCurrentPosition"
         android:text="@string/center_current_position" />
 
+    <CheckBox
+        android:id="@+id/checkBoxTrace"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/buttonSetMarkerCenter"
+        android:layout_marginRight="3dp"
+        android:text="@string/trace" />
+
+    <Button
+        android:id="@+id/buttonHsr"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@+id/checkBoxTrace"
+        android:layout_below="@+id/buttonCenterCurrentPosition"
+        android:onClick="centerHsr"
+        android:text="@string/hsr" />
+
     <Button
         android:id="@+id/buttonSetMarkerCenter"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
-        android:layout_below="@+id/buttonCenterCurrentPosition"
+        android:layout_below="@+id/buttonHsr"
         android:onClick="setMarkerCenter"
         android:text="@string/set_marker_center" />
 
