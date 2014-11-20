@@ -66,7 +66,6 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 	private List<Overlay> mapOverlays;
 	private MapView mapViewMap;
 	private MyItemizedOverlay itemizedOverlay;
-	private OverlayItem overlayItemHsr;
 	private TextView textViewLatitudeValue;
 	private TextView textViewLongitudeValue;
 
@@ -85,6 +84,11 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 			Log.d(DEBUG_TAG, "GPS_PROVIDER is not enabled");
 		} else {
 			Log.d(DEBUG_TAG, "GPS_PROVIDER is enabled");
+		}
+		if (!locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+			Log.d(DEBUG_TAG, "NETWORK_PROVIDER is not enabled");
+		} else {
+			Log.d(DEBUG_TAG, "NETWORK_PROVIDER is enabled");
 		}
 
 		textViewLatitudeValue = (TextView) findViewById(R.id.textViewLatitudeValue);
@@ -128,9 +132,14 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 		mapViewMap.getOverlays().add(treasureMapTilesOverlay);
 
 		mapOverlays = mapViewMap.getOverlays();
-		overlayItemHsr = new OverlayItem("HSR", "Hochschule für Technik Rapperswil", positionHsr);
-		Drawable drawableMarkerDefault = this.getResources().getDrawable(R.drawable.androidmarker);
 
+		OverlayItem overlayItemHsr = new OverlayItem("HSR", "Hochschule für Technik Rapperswil", positionHsr);
+		Drawable drawableMarkerHsr = this.getResources().getDrawable(R.drawable.logo_hsr);
+		MyItemizedOverlay itemizedOverlayHsr = new MyItemizedOverlay(drawableMarkerHsr, resourceProxy, this);
+		itemizedOverlayHsr.addOverlay(overlayItemHsr);
+		mapOverlays.add(itemizedOverlayHsr);
+
+		Drawable drawableMarkerDefault = this.getResources().getDrawable(R.drawable.androidmarker);
 		itemizedOverlay = new MyItemizedOverlay(drawableMarkerDefault, resourceProxy, this) {
 
 			@Override
@@ -173,24 +182,23 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 			}
 		};
 
-		itemizedOverlay.addOverlay(overlayItemHsr);
 		mapOverlays.add(itemizedOverlay);
 		mapViewMap.invalidate();
-		writePosition(positionCurrent);
+//		writePosition(positionCurrent);
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
 
-		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 8484, 1, this);
-		locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 8484, 1, this);
+		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 1, this);
+		locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000, 1, this);
 
-		if (checkBoxTrace.isChecked()) {
-			controllerMapView.animateTo(positionCurrent);
-		} else {
-			controllerMapView.animateTo(positionHsr);
-		}
+//		if (checkBoxTrace.isChecked()) {
+//			controllerMapView.animateTo(positionCurrent);
+//		} else {
+//			controllerMapView.animateTo(positionHsr);
+//		}
 	}
 
 	@Override
@@ -275,7 +283,7 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 		// Put overlay icon a little way from map centre
 		itemizedOverlay.addItem((GeoPoint) mapViewMap.getMapCenter());
 
-//		mapOverlays.add(itemizedOverlay);
+		// mapOverlays.add(itemizedOverlay);
 		mapViewMap.invalidate();
 	}
 }
