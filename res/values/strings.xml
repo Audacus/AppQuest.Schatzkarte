@@ -11,5 +11,6 @@
     <string name="set_marker_center">set marker</string>
     <string name="trace">trace</string>
     <string name="hsr">hsr</string>
+    <string name="no_gps">No GPS Provider found!\nPlease activate!</string>
 
 </resources>

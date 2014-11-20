@@ -55,6 +55,7 @@ public final class R {
         public static final int hsr=0x7f050009;
         public static final int latitude=0x7f050003;
         public static final int longitude=0x7f050004;
+        public static final int no_gps=0x7f05000a;
         public static final int no_value=0x7f050005;
         public static final int set_marker_center=0x7f050007;
         public static final int trace=0x7f050008;
