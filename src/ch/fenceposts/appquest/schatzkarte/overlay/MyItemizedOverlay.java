@@ -1,4 +1,4 @@
-package ch.fenceposts.appquest.schatzkarte;
+package ch.fenceposts.appquest.schatzkarte.overlay;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +20,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.view.MotionEvent;
+import ch.fenceposts.appquest.schatzkarte.MainActivity;
 import ch.fenceposts.appquest.schatzkarte.database.LocationContract.LocationEntry;
 import ch.fenceposts.appquest.schatzkarte.database.LocationDbHelper;
 
@@ -73,7 +74,7 @@ public class MyItemizedOverlay extends ItemizedOverlay<OverlayItem> {
 
 	public void addItem(GeoPoint pGeoPoint) {
 		long locationId = addDbLocation(pGeoPoint);
-		addOverlay(new OverlayItem(String.valueOf(locationId), "long: " + Double.toString(pGeoPoint.getLongitude()) + "\nlati: " + Double.toString(pGeoPoint.getLatitude()),
+		addOverlay(new OverlayItem(String.valueOf(locationId), "long: " + Double.toString(pGeoPoint.getLongitudeE6()) + "\nlati: " + Double.toString(pGeoPoint.getLatitudeE6()),
 				pGeoPoint));
 		Log.d(DEBUG_TAG, "mOverlays.size = " + String.valueOf(mOverlays.size()));
 	}

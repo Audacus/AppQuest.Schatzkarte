@@ -37,6 +37,7 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteCantOpenDatabaseException;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -55,9 +56,12 @@ import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 import ch.fenceposts.appquest.schatzkarte.database.LocationDbHelper;
+import ch.fenceposts.appquest.schatzkarte.overlay.MyItemizedOverlay;
 
 public class MainActivity extends Activity implements LocationListener, OnClickListener {
 
+	public static DisplayMetrics displayMetrics = new DisplayMetrics();
+	
 	private static final double LATITUDE_HSR = 47.223252;
 	private static final double LONGITUDE_HSR = 8.817011;
 	private static final String DEBUG_TAG = "mydebug";
@@ -66,14 +70,13 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 	private GeoPoint positionHsr = new GeoPoint(LATITUDE_HSR, LONGITUDE_HSR);
 	private GeoPoint positionCurrent = positionHsr;
 	private IMapController controllerMapView;
-	private LocationDbHelper locationDbHelper; 
+	private LocationDbHelper locationDbHelper;
 	private LocationManager locationManager;
 	private List<Overlay> mapOverlays;
 	private MapView mapViewMap;
 	private MyItemizedOverlay itemizedOverlay;
 	private TextView textViewLatitudeValue;
 	private TextView textViewLongitudeValue;
-	static DisplayMetrics displayMetrics = new DisplayMetrics();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -119,35 +122,43 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 		// anzeigen
 		XYTileSource treasureMapTileSource = new XYTileSource("mbtiles", ResourceProxy.string.offline_mode, 1, 20, 256, ".png", new String[] { "http://example.org/" });
 
-		File file = new File(Environment.getExternalStorageDirectory() /*
-																		 * entspricht
-																		 * sdcard
-																		 */, "hsr.mbtiles");
+		try {
+			File file = new File(Environment.getExternalStorageDirectory() /*
+																			 * entspricht
+																			 * sdcard
+																			 */, "hsr.mbtiles");
 
-		/*
-		 * Das verwenden von mbtiles ist leider ein wenig aufwändig, wir müssen
-		 * unsere XYTileSource in verschiedene Klassen 'verpacken' um sie dann
-		 * als TilesOverlay über der Grundkarte anzuzeigen.
-		 */
-		MapTileModuleProviderBase treasureMapModuleProvider = new MapTileFileArchiveProvider(new SimpleRegisterReceiver(this), treasureMapTileSource,
-				new IArchiveFile[] { MBTilesFileArchive.getDatabaseFileArchive(file) });
+			/*
+			 * Das verwenden von mbtiles ist leider ein wenig aufwändig, wir
+			 * müssen unsere XYTileSource in verschiedene Klassen 'verpacken' um
+			 * sie dann als TilesOverlay über der Grundkarte anzuzeigen.
+			 */
+			if (file != null) {
+				MapTileModuleProviderBase treasureMapModuleProvider = new MapTileFileArchiveProvider(new SimpleRegisterReceiver(this), treasureMapTileSource,
+						new IArchiveFile[] { MBTilesFileArchive.getDatabaseFileArchive(file) });
 
-		MapTileProviderBase treasureMapProvider = new MapTileProviderArray(treasureMapTileSource, null, new MapTileModuleProviderBase[] { treasureMapModuleProvider });
-		TilesOverlay treasureMapTilesOverlay = new TilesOverlay(treasureMapProvider, getBaseContext());
-		treasureMapTilesOverlay.setLoadingBackgroundColor(Color.TRANSPARENT);
+				MapTileProviderBase treasureMapProvider = new MapTileProviderArray(treasureMapTileSource, null, new MapTileModuleProviderBase[] { treasureMapModuleProvider });
+				TilesOverlay treasureMapTilesOverlay = new TilesOverlay(treasureMapProvider, getBaseContext());
+				treasureMapTilesOverlay.setLoadingBackgroundColor(Color.TRANSPARENT);
 
-		// Jetzt können wir den Overlay zu unserer Karte hinzufügen:
-		mapViewMap.getOverlays().add(treasureMapTilesOverlay);
+				// Jetzt können wir den Overlay zu unserer Karte hinzufügen:
+				mapViewMap.getOverlays().add(treasureMapTilesOverlay);
+			}
+		} catch (SQLiteCantOpenDatabaseException scode) {
+			Log.d(DEBUG_TAG, "SQLiteCantOpenDatabaseException thrown!");
+			alertHsrMbtiles();
+		}
+		Log.d(DEBUG_TAG, "After error");
 
 		mapOverlays = mapViewMap.getOverlays();
 
 		OverlayItem overlayItemHsr = new OverlayItem("HSR", "Hochschule für Technik Rapperswil", positionHsr);
-		Drawable drawableMarkerHsr = this.getResources().getDrawable(R.drawable.logo_hsr);
+		Drawable drawableMarkerHsr = this.getResources().getDrawable(R.drawable.marker_hsr);
 		MyItemizedOverlay itemizedOverlayHsr = new MyItemizedOverlay(drawableMarkerHsr, resourceProxy, this);
 		itemizedOverlayHsr.addOverlay(overlayItemHsr);
 		mapOverlays.add(itemizedOverlayHsr);
 
-		Drawable drawableMarkerDefault = this.getResources().getDrawable(R.drawable.androidmarker);
+		Drawable drawableMarkerDefault = this.getResources().getDrawable(R.drawable.marker_default);
 
 		itemizedOverlay = new MyItemizedOverlay(drawableMarkerDefault, resourceProxy, this) {
 
@@ -273,6 +284,20 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 
 	}
 
+	private void alertHsrMbtiles() {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		String text = getResources().getString(R.string.no_hsr_mbtiles);
+		builder.setMessage(text);
+		builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				dialog.dismiss();
+				// finish();
+			}
+		});
+		AlertDialog dialog = builder.create();
+		dialog.show();
+	}
+
 	private void alertGpsProvider() {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		String text = getResources().getString(R.string.no_gps);
@@ -280,7 +305,7 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 		builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int id) {
 				dialog.dismiss();
-				finish();
+				// finish();
 			}
 		});
 		AlertDialog dialog = builder.create();
@@ -317,7 +342,7 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 		}
 
 		intent.putExtra("ch.appquest.taskname", "Schatzkarte");
-		
+
 		List<GeoPoint> locations = new ArrayList<GeoPoint>(locationDbHelper.getAllLocations());
 
 		JSONArray jsonArray = new JSONArray();
@@ -328,17 +353,18 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 
 				jsonObjectGeoPoint.put("lon", geoPoint.getLongitudeE6());
 				jsonObjectGeoPoint.put("lat", geoPoint.getLatitudeE6());
-				
+
 				jsonArray.put(jsonObjectGeoPoint);
 			}
 			Log.d(DEBUG_TAG, "jsonArray:\n" + jsonArray.toString());
-			
+
 			jsonString = jsonArray.toString();
 		} catch (JSONException jsone) {
 			jsone.printStackTrace();
 		}
-		
-		// Achtung, je nach App wird etwas anderes eingetragen (siehe Tabelle ganz unten):
+
+		// Achtung, je nach App wird etwas anderes eingetragen (siehe Tabelle
+		// ganz unten):
 		intent.putExtra("ch.appquest.logmessage", jsonString);
 
 		startActivity(intent);

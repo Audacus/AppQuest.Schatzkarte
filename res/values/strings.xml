@@ -12,5 +12,6 @@
     <string name="trace">trace</string>
     <string name="hsr">hsr</string>
     <string name="no_gps">No GPS Provider found!\nPlease activate!</string>
+    <string name="no_hsr_mbtiles">hsr.mbtiles not found!</string>
 
 </resources>

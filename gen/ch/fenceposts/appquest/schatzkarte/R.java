@@ -26,6 +26,7 @@ public final class R {
         public static final int ic_launcher=0x7f020001;
         public static final int logo_hsr=0x7f020002;
         public static final int marker_default=0x7f020003;
+        public static final int marker_hsr=0x7f020004;
     }
     public static final class id {
         public static final int action_settings=0x7f08000b;
@@ -56,6 +57,7 @@ public final class R {
         public static final int latitude=0x7f050003;
         public static final int longitude=0x7f050004;
         public static final int no_gps=0x7f05000a;
+        public static final int no_hsr_mbtiles=0x7f05000b;
         public static final int no_value=0x7f050005;
         public static final int set_marker_center=0x7f050007;
         public static final int trace=0x7f050008;
