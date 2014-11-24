@@ -61,7 +61,7 @@ import ch.fenceposts.appquest.schatzkarte.overlay.MyItemizedOverlay;
 public class MainActivity extends Activity implements LocationListener, OnClickListener {
 
 	public static DisplayMetrics displayMetrics = new DisplayMetrics();
-	
+
 	private static final double LATITUDE_HSR = 47.223252;
 	private static final double LONGITUDE_HSR = 8.817011;
 	private static final String DEBUG_TAG = "mydebug";
@@ -218,7 +218,6 @@ public class MainActivity extends Activity implements LocationListener, OnClickL
 	}
 
 	@Override
-	// Snippet von HSR zum einlesen vom QR-Code
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuItem menuItem = menu.add("Log");
 		menuItem.setOnMenuItemClickListener(new OnMenuItemClickListener() {
